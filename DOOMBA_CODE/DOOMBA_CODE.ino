@@ -1,5 +1,6 @@
 // C++ code4
 #include <Servo.h>  // Include the Servo library
+#include <avr/power.h> //Only necessary for 8Mhz arduino. Comment out for 16Mhz arduino.
 
 Servo fan;
 
@@ -11,7 +12,8 @@ long randClean; //Randomize cleaning or not cleaning
 long randTurn; //Randomize the turning of the DOOMBA
 
 // Variables for millis timing
-unsigned long previousTime = 0;
+unsigned long previousCleanTime = 0;
+unsigned long previousTurnTime = 0;
 
 //Event times for everything
 unsigned long eventClean = 1000;  //event happens every one second
@@ -57,6 +59,8 @@ long readUltrasonicDistance(int triggerPin, int echoPin) {
 
 void setup()
 {
+  clock_prescale_set (clock_div_2); //Only necessary for 8Mhz arduino. Comment out for 16Mhz arduino.
+
   // Initialize serial communication
   Serial.begin(9600);
   
@@ -97,8 +101,6 @@ void setup()
   analogWrite(motorPin3, 255);
   analogWrite(motorPin4, 0);
   
-  
-  
 }
 
 void loop()
@@ -110,9 +112,9 @@ void loop()
   inches = cm / 2.54;  // Convert cm to inches
   
   //Event time for cleaning or not cleaning
-  if (currentTime - previousTime >= eventClean) {
+  if (currentTime - previousCleanTime >= eventClean) {
     //Randomly deciding if it's cleaning time or not
-    randClean = random(1, 2); //1 = cleaning, 2 = not cleaning
+    randClean = random(1, 3); //1 = cleaning, 2 = not cleaning
   }
   
   //Code for if DOOMBA is cleaning or not cleaning
@@ -124,16 +126,17 @@ void loop()
     fan.write(0);
     digitalWrite(red1, HIGH);
     digitalWrite(red2, HIGH);
+    previousCleanTime = currentTime;
   }
   
   //Event time for turning of DOOMBA
-  if (currentTime - previousTime >= eventTurn) {
+  if (currentTime - previousTurnTime >= eventTurn) {
     //Randomly choosing turning for DOOMBA
-    randTurn = random(1, 3); //1 = right, 2 = left, 3 = straight
-    previousTime = currentTime;
+    randTurn = random(1, 4); //1 = right, 2 = left, 3 = straight
+    previousTurnTime = currentTime;
   }
   
-  if (cm <= 20) { //If DOOMBA doesn't detect 20cm something in front of it
+  if (cm >= 20) { //If DOOMBA doesn't detect 20cm something in front of it
       
   //Movement code for DOOMBA
   if (randTurn == 1) {
@@ -168,7 +171,7 @@ void loop()
     analogWrite(motorPin3, 255);
     analogWrite(motorPin4, 0);
   }
-} else if (cm > 20) { //If DOOMBA detects something within 20 cm
+} else if (cm < 20) { //If DOOMBA detects something within 20 cm
     //moving right
   
   	//Top motor is going forward
